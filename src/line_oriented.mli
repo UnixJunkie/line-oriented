@@ -10,7 +10,7 @@ val with_out_file: filename -> (out_channel -> 'a) -> 'a
 
 (** work with open input and output files *)
 val with_infile_outfile:
-  filename -> string -> (in_channel -> out_channel -> 'a) -> 'a
+  filename -> filename -> (in_channel -> out_channel -> 'a) -> 'a
 
 (** read all lines from file *)
 val lines_of_file: filename -> string list
