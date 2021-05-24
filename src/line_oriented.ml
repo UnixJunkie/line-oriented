@@ -1,6 +1,8 @@
 
 module L = BatList
 
+type filename = string
+
 let with_in_file fn f =
   let input = open_in_bin fn in
   let res = f input in
