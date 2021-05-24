@@ -1,73 +1,96 @@
 
 open Printf
 
-module A = BatArray
 module L = BatList
 
-type filename = string
-
-let with_out_file (fn: filename) (f: out_channel -> 'a): 'a =
-  let output = open_out_bin fn in
-  let res = f output in
-  close_out output;
-  res
-
-let with_in_file (fn: filename) (f: in_channel -> 'a): 'a =
+let with_in_file fn f =
   let input = open_in_bin fn in
   let res = f input in
   close_in input;
   res
 
-let with_infile_outfile (in_fn: filename) (out_fn: filename)
-    (f: in_channel -> out_channel -> 'a): 'a =
-  let input = open_in_bin in_fn in
-  let output = open_out_bin out_fn in
-  let res = f input output in
-  close_in input;
+let with_out_file fn f =
+  let output = open_out_bin fn in
+  let res = f output in
   close_out output;
   res
 
-let lines_of_file (fn: filename): string list =
-  with_in_file fn (fun input ->
-      let res, exn = L.unfold_exc (fun () -> input_line input) in
-      if exn <> End_of_file then
-        raise exn
-      else res
+let with_infile_outfile in_fn out_fn f =
+  with_in_file in_fn (fun input ->
+      with_out_file out_fn (fun output ->
+          f input output
+        )
     )
 
+let lines_of_file fn =
+  with_in_file fn (fun input ->
+      let res, exn = L.unfold_exc (fun () -> input_line input) in
+      if exn = End_of_file then res
+      else raise exn
+    )
+
+let rev_lines_of_file fn =
+  with_in_file fn (fun input ->
+      let res = ref [] in
+      (try
+         while true do
+           res := (input_line input) :: !res
+         done
+       with End_of_file -> ()
+      );
+      !res
+    )
+
+(* assumes '\n' (UNIX) end of line *)
 let lines_to_file fn l =
   with_out_file fn (fun out ->
       L.iter (fprintf out "%s\n") l
     )
 
-(* call f on lines of file *)
-let iter_on_lines_of_file fn f =
-  let input = open_in_bin fn in
-  try
-    while true do
-      f (input_line input)
-    done
-  with End_of_file -> close_in input
+let iter fn f =
+  with_in_file fn (fun input ->
+      try
+        while true do
+          f (input_line input)
+        done
+      with End_of_file -> ()
+    )
 
-let iteri_on_lines_of_file fn f =
+let iteri fn f =
   let i = ref 0 in
-  let input = open_in_bin fn in
-  try
-    while true do
-      f !i (input_line input);
-      incr i
-    done
-  with End_of_file -> close_in input
+  let g x =
+    let y = f !i x in
+    incr i;
+    y in
+  iter fn g
 
-(* map f on lines of file *)
-let map_on_lines_of_file (fn: filename) (f: string -> 'a): 'a list =
+let map fn f =
   with_in_file fn (fun input ->
       let res, exn = L.unfold_exc (fun () -> f (input_line input)) in
       if exn = End_of_file then res
       else raise exn
     )
 
-let mapi_on_lines_of_file (fn: filename) (f: int -> string -> 'a): 'a list =
+let fold fn f init =
+  with_in_file fn (fun input ->
+      let acc = ref init in
+      (try
+         while true do
+           acc := f !acc (input_line input)
+         done
+       with End_of_file -> ()
+      );
+      !acc
+    )
+
+let rev_map fn f =
+  let res = ref [] in
+  let g line =
+    res := (f line) :: !res in
+  iter fn g;
+  !res
+
+let mapi fn f =
   with_in_file fn (fun input ->
       let i = ref 0 in
       let res, exn =
@@ -80,16 +103,20 @@ let mapi_on_lines_of_file (fn: filename) (f: int -> string -> 'a): 'a list =
       else raise exn
     )
 
-let write_lines (lines: string list) (output_fn: filename): unit =
-  with_out_file output_fn (fun out ->
-      List.iter (fprintf out "%s\n") lines
-    )
+let list_rev_filter p l =
+  let rec loop acc = function
+    | [] -> acc
+    | x :: xs ->
+      loop
+        (if p x then x :: acc else acc)
+        xs in
+  loop [] l
 
-(* keep only lines that satisfy p *)
-let filter_lines_of_file fn p =
-  L.filter p (lines_of_file fn)
+let filter fn p =
+  list_rev_filter p (rev_lines_of_file fn)
 
-let count_lines_of_file (fn: string): int =
+(* count lines *)
+let length fn =
   let count = ref 0 in
-  iter_on_lines_of_file fn (fun _line -> incr count);
+  iter fn (fun _line -> incr count);
   !count
