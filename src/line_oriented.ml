@@ -1,6 +1,4 @@
 
-open Printf
-
 module L = BatList
 
 let with_in_file fn f =
@@ -41,10 +39,18 @@ let rev_lines_of_file fn =
       !res
     )
 
-(* assumes '\n' (UNIX) end of line *)
-let lines_to_file fn l =
+let terminate_line =
+  if Sys.os_type = "Win32" then
+    (fun out -> output_string out "\r\n")
+  else
+    (fun out -> output_char out '\n')
+
+let lines_to_file fn lines =
   with_out_file fn (fun out ->
-      L.iter (fprintf out "%s\n") l
+      L.iter (fun line ->
+          output_string out line;
+          terminate_line out
+        ) lines
     )
 
 let iter fn f =
