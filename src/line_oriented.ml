@@ -124,7 +124,10 @@ let filter fn p =
   list_rev_filter p (rev_lines_of_file fn)
 
 (* count lines *)
-let length fn =
+let count fn =
   let count = ref 0 in
   iter fn (fun _line -> incr count);
   !count
+
+(* alias *)
+let length = count

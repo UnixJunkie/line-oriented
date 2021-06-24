@@ -43,4 +43,7 @@ val fold: filename -> ('a -> string -> 'a) -> 'a -> 'a
 val filter: filename -> (string -> bool) -> string list
 
 (** count lines of file *)
+val count: filename -> int
+
+(** alias for count *)
 val length: filename -> int
