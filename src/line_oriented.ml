@@ -131,3 +131,13 @@ let count fn =
 
 (* alias *)
 let length = count
+
+(* marshal to file *)
+let save fn x =
+  with_out_file fn (fun out ->
+      Marshal.to_channel out x [Marshal.No_sharing]
+    )
+
+(* unmarshal from file *)
+let restore fn =
+  with_in_file fn Marshal.from_channel

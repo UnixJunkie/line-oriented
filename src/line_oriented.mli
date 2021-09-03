@@ -47,3 +47,9 @@ val count: filename -> int
 
 (** alias for count *)
 val length: filename -> int
+
+(** [save fn x]: marshal [x] to file [fn] *)
+val save: filename -> 'a -> unit
+
+(** [restore fn]: unmarshal value from whole file [fn] *)
+val restore: filename -> 'a
