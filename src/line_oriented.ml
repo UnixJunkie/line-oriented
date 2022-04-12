@@ -50,6 +50,28 @@ let output_EOL =
   else
     (fun out -> output_char out unix_EOL)
 
+let append_EOL =
+  if Sys.os_type = "Win32" then
+    (fun buff -> Buffer.add_string buff win_EOL)
+  else
+    (fun buff -> Buffer.add_char buff unix_EOL)
+
+let to_string fn =
+  let size =
+    let stats = Unix.stat fn in
+    stats.st_size in
+  let buff = Buffer.create size in
+  with_in_file fn (fun input ->
+      try
+        while true do
+          let line = input_line input in
+          Buffer.add_string buff line;
+          append_EOL buff
+        done;
+        assert(false)
+      with End_of_file -> Buffer.contents buff
+    )
+
 let lines_to_file fn lines =
   with_out_file fn (fun out ->
       L.iter (fun line ->

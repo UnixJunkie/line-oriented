@@ -5,6 +5,9 @@ type filename = string
 (** work with open input file *)
 val with_in_file: filename -> (in_channel -> 'a) -> 'a
 
+(** read whole file content *)
+val to_string: filename -> string
+
 (** work with open output file *)
 val with_out_file: filename -> (out_channel -> 'a) -> 'a
 
