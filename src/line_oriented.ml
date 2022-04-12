@@ -41,17 +41,20 @@ let rev_lines_of_file fn =
       !res
     )
 
-let terminate_line =
+let win_EOL = "\r\n"
+let unix_EOL = '\n'
+
+let output_EOL =
   if Sys.os_type = "Win32" then
-    (fun out -> output_string out "\r\n")
+    (fun out -> output_string out win_EOL)
   else
-    (fun out -> output_char out '\n')
+    (fun out -> output_char out unix_EOL)
 
 let lines_to_file fn lines =
   with_out_file fn (fun out ->
       L.iter (fun line ->
           output_string out line;
-          terminate_line out
+          output_EOL out
         ) lines
     )
 
